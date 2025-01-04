@@ -162,6 +162,7 @@ def get_feature_toggle_details(package_name, feature_id):
 
     return jsonify({'error': 'Feature toggle not found'}), 404
 
+
 # 4. Get all active feature toggles for package name
 @feature_toggle_blueprint.route('/feature-toggles/<package_name>/active', methods=['GET'])
 def get_active_feature_toggles(package_name):
@@ -194,6 +195,7 @@ def get_active_feature_toggles(package_name):
     }))
 
     return jsonify(active_features), 200
+
 
 # 5. Get all active feature toggles for package name and date
 @feature_toggle_blueprint.route('/feature-toggles/<package_name>/by-date', methods=['GET'])
@@ -242,6 +244,7 @@ def get_feature_toggles_by_date(package_name):
         features_by_date.append(feature)
     return jsonify(features_by_date), 200
 
+
 # 6. Update a feature toggle by id for package name
 @feature_toggle_blueprint.route('/feature-toggle/<package_name>/<feature_id>/update-dates', methods=['PUT'])
 def update_feature_toggle_dates(package_name, feature_id):
@@ -288,7 +291,8 @@ def update_feature_toggle_dates(package_name, feature_id):
     new_beginning_date = None
     db = MongoConnectionHolder.get_db()
     if db is None:
-        return jsonify({'error': 'Database not initialized'}), 500  # Helpful error message for debugging
+        # Helpful error message for debugging
+        return jsonify({'error': 'Database not initialized'}), 500
 
     # Check for new dates in request data
     if 'expiration_date' in data:
@@ -301,10 +305,12 @@ def update_feature_toggle_dates(package_name, feature_id):
 
     try:
         # Parse new dates
-        if new_beginning_date:
-            new_beginning_date = datetime.strptime(new_beginning_date, '%Y-%m-%d %H:%M:%S')
         if new_expiration_date:
-            new_expiration_date = datetime.strptime(new_expiration_date, '%Y-%m-%d %H:%M:%S')
+            new_expiration_date = datetime.strptime(
+                new_expiration_date, '%Y-%m-%d %H:%M:%S')
+        if new_beginning_date:
+            new_beginning_date = datetime.strptime(
+                new_beginning_date, '%Y-%m-%d %H:%M:%S')
     except ValueError:
         return jsonify({'error': 'Invalid date format, use YYYY-MM-DD HH:MM:SS'}), 400
 
@@ -314,18 +320,18 @@ def update_feature_toggle_dates(package_name, feature_id):
     package_collection = db[package_name]
     if package_collection is None:
         return jsonify({'error': 'Package not found'}), 404
-    
+
     # Find and update feature toggle
     feature = package_collection.find_one({'_id': feature_id})
     if feature:
-        if new_beginning_date:
-            if new_beginning_date > feature['expiration_date']:
-                return jsonify({'error': 'Beginning date cannot be after expiration date'}), 400
-            feature['beginning_date'] = new_beginning_date
         if new_expiration_date:
             if new_expiration_date < feature['beginning_date']:
                 return jsonify({'error': 'Expiration date cannot be before beginning date'}), 400
             feature['expiration_date'] = new_expiration_date
+        if new_beginning_date:
+            if new_beginning_date > feature['expiration_date']:
+                return jsonify({'error': 'Beginning date cannot be after expiration date'}), 400
+            feature['beginning_date'] = new_beginning_date
 
         package_collection.update_one(
             {'_id': feature['_id']},
@@ -357,11 +363,11 @@ def delete_all_feature_toggles(package_name):
     db = MongoConnectionHolder.get_db()
     if db is None:
         return jsonify({'error': 'Database not initialized'}), 500
-    
+
     package_collection = db[package_name]
     if package_collection is None:
         return jsonify({'error': 'Package not found'}), 404
-    
+
     # Delete all feature toggles
     package_collection.delete_many({})
     return jsonify({'message': 'All feature toggles deleted'}), 200
