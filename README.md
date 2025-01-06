@@ -1,4 +1,4 @@
-# 25A-10221-FeatureToggl_Flask_API
+# 25A-10221-FeatureToggle_Flask_API
 
 - Flask
 - Flasgger (Flask Swagger)
